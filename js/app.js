@@ -29,7 +29,7 @@ const marquee1    = document.getElementById('marquee1');
 
 // ─── CANVAS RESIZE ─────────────────────────────────────────
 function resizeCanvas() {
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2× for mobile performance
   canvas.width  = window.innerWidth * dpr;
   canvas.height = window.innerHeight * dpr;
   canvas.style.width  = window.innerWidth + 'px';
@@ -118,9 +118,19 @@ function hideLoader() {
   }, 800);
 }
 
+// ─── TOUCH DEVICE DETECTION ────────────────────────────────
+function isTouchDevice() {
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+}
+
 // ─── LENIS SMOOTH SCROLL ───────────────────────────────────
 let lenis;
 function initLenis() {
+  if (isTouchDevice()) {
+    // On mobile, use native scroll — Lenis interferes with touch
+    ScrollTrigger.normalizeScroll(true);
+    return;
+  }
   lenis = new Lenis({
     duration: 1.2,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -412,11 +422,16 @@ function repositionSections() {
 }
 
 let resizeTimer;
+let lastResizeWidth = window.innerWidth;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
     resizeCanvas();
-    repositionSections();
+    // Only reposition sections on width change (not mobile address-bar height changes)
+    if (window.innerWidth !== lastResizeWidth) {
+      lastResizeWidth = window.innerWidth;
+      repositionSections();
+    }
   }, 150);
 });
 
