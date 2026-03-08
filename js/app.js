@@ -1,23 +1,10 @@
 /* ============================================================
    LUMINA DENTAL — app.js
-   Canvas frame animation + GSAP scroll sections
-   Mobile: video scrubbing (no frame memory issue)
-   Desktop: canvas frame sequence
+   Video scrubbing on ALL devices + GSAP scroll sections
    ============================================================ */
 
-const FRAME_COUNT = 192;
-const VIDEO_DURATION = 8.0; // seconds
+const VIDEO_DURATION = 8.0; // seconds — match actual video length
 const FRAME_SPEED = 2.0;
-const frames = new Array(FRAME_COUNT).fill(null);
-let loadedCount = 0;
-let currentFrame = 0;
-let bgColor = '#080C11';
-
-// ─── TOUCH DEVICE DETECTION ────────────────────────────────
-function isTouchDevice() {
-  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-}
-const MOBILE = isTouchDevice();
 
 // ─── DOM REFS ──────────────────────────────────────────────
 const loader      = document.getElementById('loader');
@@ -25,7 +12,6 @@ const loaderBar   = document.getElementById('loader-bar');
 const loaderPct   = document.getElementById('loader-percent');
 const canvasWrap  = document.getElementById('canvas-wrap');
 const canvas      = document.getElementById('canvas');
-const ctx         = canvas.getContext('2d');
 const scrollVideo = document.getElementById('scroll-video');
 const scrollCont  = document.getElementById('scroll-container');
 const overlay     = document.getElementById('dark-overlay');
@@ -37,78 +23,13 @@ const heroScroll  = document.querySelector('.hero-scroll-indicator');
 const heroBadge   = document.querySelector('.hero-badge');
 const marquee1    = document.getElementById('marquee1');
 
-// ─── CANVAS RESIZE (desktop only) ──────────────────────────
-function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width  = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width  = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
-  ctx.scale(dpr, dpr);
-  if (frames[currentFrame]) drawFrame(currentFrame);
-}
-if (!MOBILE) {
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-}
+// ─── SHOW VIDEO, HIDE CANVAS ────────────────────────────────
+canvas.style.display = 'none';
+scrollVideo.style.display = 'block';
 
-// ─── BACKGROUND SAMPLING ───────────────────────────────────
-function sampleBgColor(img) {
-  const tmpCanvas = document.createElement('canvas');
-  const tmpCtx = tmpCanvas.getContext('2d');
-  tmpCanvas.width = 4;
-  tmpCanvas.height = 4;
-  tmpCtx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, 4, 4);
-  const d = tmpCtx.getImageData(0, 0, 1, 1).data;
-  return `rgb(${d[0]},${d[1]},${d[2]})`;
-}
-
-// ─── DRAW FRAME (desktop only) ──────────────────────────────
-function drawFrame(index) {
-  const img = frames[index];
-  if (!img) return;
-
-  const cw = window.innerWidth;
-  const ch = window.innerHeight;
-  const iw = img.naturalWidth;
-  const ih = img.naturalHeight;
-  const IMAGE_SCALE = 0.87;
-  const scale = Math.max(cw / iw, ch / ih) * IMAGE_SCALE;
-  const dw = iw * scale;
-  const dh = ih * scale;
-  const dx = (cw - dw) / 2;
-  const dy = (ch - dh) / 2;
-
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, cw, ch);
-  ctx.drawImage(img, dx, dy, dw, dh);
-}
-
-// ─── FRAME LOADER (desktop only) ───────────────────────────
-function loadFrame(i) {
+// ─── VIDEO PRELOAD ──────────────────────────────────────────
+function preloadVideo() {
   return new Promise((resolve) => {
-    const img = new Image();
-    const n = String(i + 1).padStart(4, '0');
-    img.src = `frames/frame_${n}.webp`;
-    img.onload = () => {
-      frames[i] = img;
-      loadedCount++;
-      const pct = Math.round((loadedCount / FRAME_COUNT) * 100);
-      loaderBar.style.width = pct + '%';
-      loaderPct.textContent = pct + '%';
-      if (i % 20 === 0) bgColor = sampleBgColor(img);
-      resolve();
-    };
-    img.onerror = resolve;
-  });
-}
-
-// ─── MOBILE VIDEO LOADER ────────────────────────────────────
-function preloadMobileVideo() {
-  return new Promise((resolve) => {
-    scrollVideo.style.display = 'block';
-    canvas.style.display = 'none';
-
     // Fake progress while video buffers
     let fakePct = 0;
     const fakeInterval = setInterval(() => {
@@ -125,6 +46,7 @@ function preloadMobileVideo() {
     };
 
     scrollVideo.addEventListener('canplaythrough', finish, { once: true });
+    scrollVideo.addEventListener('loadedmetadata', finish, { once: true });
     scrollVideo.addEventListener('error', finish, { once: true });
 
     // Timeout fallback — proceed after 5s regardless
@@ -132,28 +54,6 @@ function preloadMobileVideo() {
 
     scrollVideo.load();
   });
-}
-
-async function preloadFrames() {
-  if (MOBILE) {
-    await preloadMobileVideo();
-    hideLoader();
-    return;
-  }
-
-  // Desktop: load canvas frames
-  // Phase 1: load first 12 frames fast
-  const phase1 = [];
-  for (let i = 0; i < Math.min(12, FRAME_COUNT); i++) phase1.push(loadFrame(i));
-  await Promise.all(phase1);
-  drawFrame(0);
-
-  // Phase 2: load remaining frames in background
-  const phase2 = [];
-  for (let i = 12; i < FRAME_COUNT; i++) phase2.push(loadFrame(i));
-  await Promise.all(phase2);
-
-  hideLoader();
 }
 
 // ─── HIDE LOADER ───────────────────────────────────────────
@@ -168,10 +68,9 @@ function hideLoader() {
 // ─── LENIS SMOOTH SCROLL ───────────────────────────────────
 let lenis;
 function initLenis() {
-  if (MOBILE) {
-    // On mobile, use native scroll — Lenis interferes with touch
-    return;
-  }
+  // Skip Lenis on touch devices — interferes with native touch scroll
+  if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;
+
   lenis = new Lenis({
     duration: 1.2,
     easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -180,7 +79,6 @@ function initLenis() {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
-  // Expose for screenshot tooling
   window._lenis = lenis;
 }
 
@@ -210,7 +108,7 @@ function animateHeroIn() {
   }, '-=0.3');
 }
 
-// ─── HERO → CANVAS TRANSITION ──────────────────────────────
+// ─── HERO → VIDEO TRANSITION ────────────────────────────────
 function initHeroTransition() {
   ScrollTrigger.create({
     trigger: scrollCont,
@@ -224,7 +122,7 @@ function initHeroTransition() {
       heroSection.style.opacity = Math.max(0, 1 - p * 18);
       heroSection.style.transform = `scale(${1 - p * 0.05})`;
 
-      // Canvas reveals via expanding circle clip-path
+      // Video reveals via expanding circle clip-path
       const wipe = Math.min(1, Math.max(0, (p - 0.005) / 0.07));
       const radius = wipe * 80;
       canvasWrap.style.clipPath = `circle(${radius}% at 50% 50%)`;
@@ -232,24 +130,8 @@ function initHeroTransition() {
   });
 }
 
-// ─── CANVAS / VIDEO SCROLL ─────────────────────────────────
-function initCanvasScroll() {
-  if (MOBILE) {
-    // Mobile: scrub video currentTime
-    ScrollTrigger.create({
-      trigger: scrollCont,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: true,
-      onUpdate(self) {
-        const accelerated = Math.min(self.progress * FRAME_SPEED, 1);
-        scrollVideo.currentTime = accelerated * VIDEO_DURATION;
-      }
-    });
-    return;
-  }
-
-  // Desktop: canvas frame sequence
+// ─── VIDEO SCROLL SCRUBBING (all devices) ──────────────────
+function initVideoScroll() {
   ScrollTrigger.create({
     trigger: scrollCont,
     start: 'top top',
@@ -257,10 +139,10 @@ function initCanvasScroll() {
     scrub: true,
     onUpdate(self) {
       const accelerated = Math.min(self.progress * FRAME_SPEED, 1);
-      const index = Math.min(Math.floor(accelerated * FRAME_COUNT), FRAME_COUNT - 1);
-      if (index !== currentFrame) {
-        currentFrame = index;
-        requestAnimationFrame(() => drawFrame(currentFrame));
+      const target = accelerated * VIDEO_DURATION;
+      // Only seek if meaningfully different (avoids iOS flicker)
+      if (Math.abs(scrollVideo.currentTime - target) > 0.016) {
+        scrollVideo.currentTime = target;
       }
     }
   });
@@ -308,7 +190,6 @@ function initMarquee() {
     }
   });
 
-  // Fade marquee in/out based on scroll position
   ScrollTrigger.create({
     trigger: scrollCont,
     start: 'top top',
@@ -316,7 +197,6 @@ function initMarquee() {
     scrub: true,
     onUpdate(self) {
       const p = self.progress;
-      // Show marquee between 30% and 50%
       let op = 0;
       if (p >= 0.27 && p <= 0.32) op = (p - 0.27) / 0.05;
       else if (p > 0.32 && p < 0.48) op = 1;
@@ -334,10 +214,8 @@ function setupSectionAnimation(section) {
   const leave   = parseFloat(section.dataset.leave) / 100;
   const mid     = (enter + leave) / 2;
 
-  // Use offsetHeight (respects CSS height declaration, not inflated by children)
   const totalH    = scrollCont.offsetHeight;
   const viewportH = window.innerHeight;
-  // CTA section: shift up so tall heading isn't cut at top
   const verticalOffset = persist ? -viewportH * 0.08 : 0;
   const sectionTop = mid * (totalH - viewportH) + viewportH / 2 + verticalOffset;
   section.style.top = sectionTop + 'px';
@@ -348,7 +226,6 @@ function setupSectionAnimation(section) {
     ' .stat, .stat-top'
   );
 
-  // Build entrance timeline
   const tl = gsap.timeline({ paused: true });
 
   switch (type) {
@@ -384,7 +261,6 @@ function setupSectionAnimation(section) {
   }
 
   let hasPlayed = false;
-  // Start hidden
   section.style.opacity = '0';
 
   ScrollTrigger.create({
@@ -408,7 +284,6 @@ function setupSectionAnimation(section) {
         section.style.opacity = '1';
         section.style.pointerEvents = 'auto';
       } else if (!inRange) {
-        // Fade out gradually at edges
         const fadeRange = 0.025;
         let op = 0;
         if (p < enter) {
@@ -453,16 +328,7 @@ function initCounters() {
   });
 }
 
-// ─── MOBILE HELPERS ────────────────────────────────────────
-function isMobile() {
-  return window.innerWidth <= 600;
-}
-
-function isTablet() {
-  return window.innerWidth <= 900;
-}
-
-// Reposition sections on window resize (orientation change, etc.)
+// ─── REPOSITION SECTIONS ON RESIZE ─────────────────────────
 function repositionSections() {
   document.querySelectorAll('.scroll-section').forEach(section => {
     const enter    = parseFloat(section.dataset.enter) / 100;
@@ -483,8 +349,6 @@ let lastResizeWidth = window.innerWidth;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    if (!MOBILE) resizeCanvas();
-    // Only reposition sections on width change (not mobile address-bar height changes)
     if (window.innerWidth !== lastResizeWidth) {
       lastResizeWidth = window.innerWidth;
       repositionSections();
@@ -498,11 +362,10 @@ function initExperience() {
   initLenis();
   animateHeroIn();
   initHeroTransition();
-  initCanvasScroll();
+  initVideoScroll();
   initDarkOverlay();
   initMarquee();
 
-  // Setup all scroll sections
   document.querySelectorAll('.scroll-section').forEach(setupSectionAnimation);
   initCounters();
 
@@ -510,4 +373,4 @@ function initExperience() {
 }
 
 // ─── START ─────────────────────────────────────────────────
-preloadFrames();
+preloadVideo().then(hideLoader);
