@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumina Dental — Precision Care</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="loader-brand">LUMINA<span>DENTAL</span></div>
+    <div class="loader-bar-wrap">
+      <div id="loader-bar"></div>
+    </div>
+    <div id="loader-percent">0%</div>
+  </div>
+
+  <!-- FIXED HEADER -->
+  <header class="site-header">
+    <div class="header-logo">LUMINA<span>DENTAL</span></div>
+    <nav class="header-nav">
+      <a href="#">Services</a>
+      <a href="#">Technology</a>
+      <a href="#">Team</a>
+      <a href="#" class="nav-cta">Book Now</a>
+    </nav>
+  </header>
+
+  <!-- HERO STANDALONE (100vh, dark, no canvas) -->
+  <section class="hero-standalone" id="hero">
+    <div class="hero-noise"></div>
+    <div class="hero-inner">
+      <span class="section-label">001 / Welcome</span>
+      <h1 class="hero-heading">
+        <span class="hero-word">Your</span>
+        <span class="hero-word">Perfect</span>
+        <span class="hero-word italic">Smile,</span>
+        <br/>
+        <span class="hero-word">Precisely</span>
+        <span class="hero-word">Crafted.</span>
+      </h1>
+      <p class="hero-tagline">World-class dental care where artistry meets science.</p>
+      <a href="#" class="hero-cta">
+        <span>Book a Consultation</span>
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M9 3l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <div class="hero-scroll-indicator">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+    <div class="hero-badge">Est. 2012 · London</div>
+  </section>
+
+  <!-- CANVAS WRAP (fixed, full viewport, behind sections) -->
+  <div class="canvas-wrap" id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div class="canvas-vignette"></div>
+  </div>
+
+  <!-- DARK OVERLAY (fixed, fade for stats section) -->
+  <div id="dark-overlay"></div>
+
+  <!-- MARQUEE WRAP (fixed, slides horizontally on scroll) -->
+  <div class="marquee-wrap" id="marquee1" data-scroll-speed="-30">
+    <div class="marquee-text">PRECISION CARE &nbsp;·&nbsp; BEAUTIFUL SMILES &nbsp;·&nbsp; ADVANCED DENTISTRY &nbsp;·&nbsp; PRECISION CARE &nbsp;·&nbsp; BEAUTIFUL SMILES &nbsp;·&nbsp;</div>
+  </div>
+
+  <!-- SCROLL CONTAINER -->
+  <div id="scroll-container">
+
+    <!-- Section 1: Intro — slide-right -->
+    <section class="scroll-section section-content align-left"
+             data-enter="4" data-leave="20" data-animation="slide-right">
+      <div class="section-inner">
+        <span class="section-label">002 / Care</span>
+        <h2 class="section-heading">State of the Art<br/>Dental Care</h2>
+        <p class="section-body">We combine cutting-edge diagnostic technology with decades of clinical expertise to deliver outcomes that go beyond expectations — restoring health, confidence, and beauty.</p>
+        <a href="#" class="section-link">Explore our services →</a>
+      </div>
+    </section>
+
+    <!-- Section 2: Comfort — fade-up -->
+    <section class="scroll-section section-content align-right"
+             data-enter="22" data-leave="38" data-animation="fade-up">
+      <div class="section-inner">
+        <span class="section-label">003 / Comfort</span>
+        <h2 class="section-heading">Your Comfort,<br/>Our Priority</h2>
+        <p class="section-body">From the moment you walk in, every detail is designed around your wellbeing. Sedation options, gentle techniques, and a team trained in anxiety-free dentistry.</p>
+        <a href="#" class="section-link">Learn more →</a>
+      </div>
+    </section>
+
+    <!-- Section 3: Technology — slide-left -->
+    <section class="scroll-section section-content align-left"
+             data-enter="40" data-leave="54" data-animation="slide-left">
+      <div class="section-inner">
+        <span class="section-label">004 / Technology</span>
+        <h2 class="section-heading">Powered by<br/>Modern Technology</h2>
+        <p class="section-body">3D imaging, digital smile design, same-day ceramic restorations — our clinic operates at the forefront of dental innovation so your treatment is faster, safer, and more precise.</p>
+        <a href="#" class="section-link">See our technology →</a>
+      </div>
+    </section>
+
+    <!-- Section 4: Stats — stagger-up, dark overlay -->
+    <section class="scroll-section section-stats"
+             data-enter="56" data-leave="72" data-animation="stagger-up">
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-number" data-value="98" data-decimals="0">0</span>
+            <span class="stat-suffix">%</span>
+          </div>
+          <span class="stat-label">Patient Satisfaction</span>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-number" data-value="12" data-decimals="0">0</span>
+            <span class="stat-suffix">+</span>
+          </div>
+          <span class="stat-label">Years of Excellence</span>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-number" data-value="15000" data-decimals="0">0</span>
+            <span class="stat-suffix">+</span>
+          </div>
+          <span class="stat-label">Smiles Transformed</span>
+        </div>
+        <div class="stat">
+          <div class="stat-top">
+            <span class="stat-number" data-value="8" data-decimals="0">0</span>
+            <span class="stat-suffix"></span>
+          </div>
+          <span class="stat-label">Specialist Dentists</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Team — clip-reveal -->
+    <section class="scroll-section section-content align-right"
+             data-enter="74" data-leave="87" data-animation="clip-reveal">
+      <div class="section-inner">
+        <span class="section-label">005 / Our Team</span>
+        <h2 class="section-heading">Expert Hands,<br/>Caring Hearts</h2>
+        <p class="section-body">Our multidisciplinary team of specialists brings together orthodontics, implantology, cosmetic dentistry, and oral surgery — all under one roof.</p>
+        <a href="#" class="section-link">Meet the team →</a>
+      </div>
+    </section>
+
+    <!-- Section 6: CTA — scale-up, persist -->
+    <section class="scroll-section section-cta"
+             data-enter="89" data-leave="100" data-animation="scale-up" data-persist="true">
+      <div class="cta-inner">
+        <span class="section-label">006 / Begin</span>
+        <h2 class="cta-heading">Ready for Your<br/><em>Best Smile?</em></h2>
+        <p class="cta-body">Your journey to exceptional dental health starts with one conversation. Book your consultation today — no commitment, no pressure.</p>
+        <div class="cta-actions">
+          <a href="#" class="cta-button primary">Book a Consultation</a>
+          <a href="#" class="cta-button secondary">Call Us</a>
+        </div>
+        <p class="cta-note">Mon–Sat · 8am–7pm · 020 7123 4567</p>
+      </div>
+    </section>
+
+  </div><!-- end scroll-container -->
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo">LUMINA<span>DENTAL</span></div>
+      <p class="footer-tagline">Precision. Artistry. Care.</p>
+      <p class="footer-copy">© 2026 Lumina Dental. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1/dist/lenis.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
