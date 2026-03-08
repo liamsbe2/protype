@@ -1,14 +1,23 @@
 /* ============================================================
    LUMINA DENTAL — app.js
    Canvas frame animation + GSAP scroll sections
+   Mobile: video scrubbing (no frame memory issue)
+   Desktop: canvas frame sequence
    ============================================================ */
 
 const FRAME_COUNT = 192;
+const VIDEO_DURATION = 8.0; // seconds
 const FRAME_SPEED = 2.0;
 const frames = new Array(FRAME_COUNT).fill(null);
 let loadedCount = 0;
 let currentFrame = 0;
 let bgColor = '#080C11';
+
+// ─── TOUCH DEVICE DETECTION ────────────────────────────────
+function isTouchDevice() {
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+}
+const MOBILE = isTouchDevice();
 
 // ─── DOM REFS ──────────────────────────────────────────────
 const loader      = document.getElementById('loader');
@@ -17,6 +26,7 @@ const loaderPct   = document.getElementById('loader-percent');
 const canvasWrap  = document.getElementById('canvas-wrap');
 const canvas      = document.getElementById('canvas');
 const ctx         = canvas.getContext('2d');
+const scrollVideo = document.getElementById('scroll-video');
 const scrollCont  = document.getElementById('scroll-container');
 const overlay     = document.getElementById('dark-overlay');
 const heroSection = document.getElementById('hero');
@@ -27,9 +37,9 @@ const heroScroll  = document.querySelector('.hero-scroll-indicator');
 const heroBadge   = document.querySelector('.hero-badge');
 const marquee1    = document.getElementById('marquee1');
 
-// ─── CANVAS RESIZE ─────────────────────────────────────────
+// ─── CANVAS RESIZE (desktop only) ──────────────────────────
 function resizeCanvas() {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap at 2× for mobile performance
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width  = window.innerWidth * dpr;
   canvas.height = window.innerHeight * dpr;
   canvas.style.width  = window.innerWidth + 'px';
@@ -37,8 +47,10 @@ function resizeCanvas() {
   ctx.scale(dpr, dpr);
   if (frames[currentFrame]) drawFrame(currentFrame);
 }
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+if (!MOBILE) {
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+}
 
 // ─── BACKGROUND SAMPLING ───────────────────────────────────
 function sampleBgColor(img) {
@@ -51,7 +63,7 @@ function sampleBgColor(img) {
   return `rgb(${d[0]},${d[1]},${d[2]})`;
 }
 
-// ─── DRAW FRAME ─────────────────────────────────────────────
+// ─── DRAW FRAME (desktop only) ──────────────────────────────
 function drawFrame(index) {
   const img = frames[index];
   if (!img) return;
@@ -72,7 +84,7 @@ function drawFrame(index) {
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
-// ─── FRAME LOADER ──────────────────────────────────────────
+// ─── FRAME LOADER (desktop only) ───────────────────────────
 function loadFrame(i) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -91,13 +103,49 @@ function loadFrame(i) {
   });
 }
 
+// ─── MOBILE VIDEO LOADER ────────────────────────────────────
+function preloadMobileVideo() {
+  return new Promise((resolve) => {
+    scrollVideo.style.display = 'block';
+    canvas.style.display = 'none';
+
+    // Fake progress while video buffers
+    let fakePct = 0;
+    const fakeInterval = setInterval(() => {
+      fakePct = Math.min(fakePct + 8, 90);
+      loaderBar.style.width = fakePct + '%';
+      loaderPct.textContent = fakePct + '%';
+    }, 150);
+
+    const finish = () => {
+      clearInterval(fakeInterval);
+      loaderBar.style.width = '100%';
+      loaderPct.textContent = '100%';
+      resolve();
+    };
+
+    scrollVideo.addEventListener('canplaythrough', finish, { once: true });
+    scrollVideo.addEventListener('error', finish, { once: true });
+
+    // Timeout fallback — proceed after 5s regardless
+    setTimeout(finish, 5000);
+
+    scrollVideo.load();
+  });
+}
+
 async function preloadFrames() {
+  if (MOBILE) {
+    await preloadMobileVideo();
+    hideLoader();
+    return;
+  }
+
+  // Desktop: load canvas frames
   // Phase 1: load first 12 frames fast
   const phase1 = [];
   for (let i = 0; i < Math.min(12, FRAME_COUNT); i++) phase1.push(loadFrame(i));
   await Promise.all(phase1);
-
-  // Show first frame immediately
   drawFrame(0);
 
   // Phase 2: load remaining frames in background
@@ -105,7 +153,6 @@ async function preloadFrames() {
   for (let i = 12; i < FRAME_COUNT; i++) phase2.push(loadFrame(i));
   await Promise.all(phase2);
 
-  // All frames ready — hide loader and begin experience
   hideLoader();
 }
 
@@ -118,17 +165,11 @@ function hideLoader() {
   }, 800);
 }
 
-// ─── TOUCH DEVICE DETECTION ────────────────────────────────
-function isTouchDevice() {
-  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-}
-
 // ─── LENIS SMOOTH SCROLL ───────────────────────────────────
 let lenis;
 function initLenis() {
-  if (isTouchDevice()) {
+  if (MOBILE) {
     // On mobile, use native scroll — Lenis interferes with touch
-    ScrollTrigger.normalizeScroll(true);
     return;
   }
   lenis = new Lenis({
@@ -191,8 +232,24 @@ function initHeroTransition() {
   });
 }
 
-// ─── CANVAS FRAME SCROLL ───────────────────────────────────
+// ─── CANVAS / VIDEO SCROLL ─────────────────────────────────
 function initCanvasScroll() {
+  if (MOBILE) {
+    // Mobile: scrub video currentTime
+    ScrollTrigger.create({
+      trigger: scrollCont,
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: true,
+      onUpdate(self) {
+        const accelerated = Math.min(self.progress * FRAME_SPEED, 1);
+        scrollVideo.currentTime = accelerated * VIDEO_DURATION;
+      }
+    });
+    return;
+  }
+
+  // Desktop: canvas frame sequence
   ScrollTrigger.create({
     trigger: scrollCont,
     start: 'top top',
@@ -426,7 +483,7 @@ let lastResizeWidth = window.innerWidth;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => {
-    resizeCanvas();
+    if (!MOBILE) resizeCanvas();
     // Only reposition sections on width change (not mobile address-bar height changes)
     if (window.innerWidth !== lastResizeWidth) {
       lastResizeWidth = window.innerWidth;
