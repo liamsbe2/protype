@@ -3,7 +3,7 @@
    Canvas frame animation + GSAP scroll sections
    ============================================================ */
 
-const FRAME_COUNT = 121;
+const FRAME_COUNT = 192;
 const FRAME_SPEED = 2.0;
 const frames = new Array(FRAME_COUNT).fill(null);
 let loadedCount = 0;
